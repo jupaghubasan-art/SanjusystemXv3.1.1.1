@@ -1,0 +1,48 @@
+name: Build SanjuSystemX APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # Works whether you paste the files or upload the project as a .zip
+      - name: Unpack project zip (only if needed)
+        run: |
+          if [ ! -d app ]; then
+            for z in *.zip; do unzip -oq "$z"; done
+          fi
+          ls -la
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build debug and release APKs
+        run: gradle :app:assembleDebug :app:assembleRelease --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SanjuSystemX-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SanjuSystemX-release-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
